@@ -1,10 +1,13 @@
+import importlib.util
 from pathlib import Path
+import sys
 from typing import Annotated
 
 import typer
 from rich.console import Console
 
 from pixharbor import __version__
+from pixharbor.config import ConfigError, load_config
 
 DEFAULT_CONFIG = """dataset_name: my_dataset
 main_keyword: example keyword
@@ -36,6 +39,16 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 console = Console()
+REQUIRED_MODULES = {
+    "Typer": "typer",
+    "Rich": "rich",
+    "HTTPX": "httpx",
+    "Pydantic": "pydantic",
+    "PyYAML": "yaml",
+    "Pillow": "PIL",
+    "ImageHash": "imagehash",
+    "Jinja2": "jinja2",
+}
 
 
 def version_callback(value: bool) -> None:
@@ -69,6 +82,38 @@ def init(force: Annotated[bool, typer.Option("--force", "-f", help="Overwrite pi
 
     console.print("Created pixharbor.yaml")
     console.print("Created datasets/")
+
+
+@app.command()
+def doctor(
+    config: Annotated[
+        Path,
+        typer.Option("--config", "-c", help="Path to PixHarbor YAML config."),
+    ] = Path("pixharbor.yaml"),
+) -> None:
+    """Check PixHarbor setup."""
+    failed = False
+    python_ok = sys.version_info >= (3, 11)
+
+    console.print("PixHarbor doctor")
+    console.print(f"{'OK' if python_ok else 'FAIL'} Python {sys.version.split()[0]}")
+    failed = failed or not python_ok
+
+    for name, module in REQUIRED_MODULES.items():
+        ok = importlib.util.find_spec(module) is not None
+        console.print(f"{'OK' if ok else 'FAIL'} {name}")
+        failed = failed or not ok
+
+    try:
+        loaded = load_config(config)
+        console.print(f"OK config: {config}")
+        console.print(f"OK dataset: {loaded.dataset_name}")
+    except ConfigError as exc:
+        console.print(f"FAIL config: {exc}")
+        failed = True
+
+    if failed:
+        raise typer.Exit(1)
 
 
 @app.command()
