@@ -4,7 +4,10 @@ import sys
 from typing import Annotated
 
 import typer
+from rich import box
 from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
 
 from pixharbor import __version__
 from pixharbor.cleaner import clean_dataset
@@ -40,7 +43,7 @@ filters:
 """
 
 app = typer.Typer(
-    help="Collect, clean, and organize image datasets.",
+    help="Build clean image datasets from the terminal.",
     no_args_is_help=True,
 )
 console = Console()
@@ -54,6 +57,19 @@ REQUIRED_MODULES = {
     "ImageHash": "imagehash",
     "Jinja2": "jinja2",
 }
+
+
+def print_panel(title: str, body: str, style: str = "blue") -> None:
+    console.print(Panel.fit(body, title=title, border_style=style))
+
+
+def print_summary(title: str, rows: list[tuple[str, str]]) -> None:
+    table = Table(title=title, box=box.ROUNDED, border_style="blue", header_style="bold blue")
+    table.add_column("Item", style="cyan")
+    table.add_column("Value", style="green")
+    for item, value in rows:
+        table.add_row(item, value)
+    console.print(table)
 
 
 def version_callback(value: bool) -> None:
@@ -74,19 +90,18 @@ def main(
 
 @app.command()
 def init(force: Annotated[bool, typer.Option("--force", "-f", help="Overwrite pixharbor.yaml.")] = False) -> None:
-    """Create a starter PixHarbor config."""
+    """Create a starter config."""
     config_path = Path("pixharbor.yaml")
     datasets_path = Path("datasets")
 
     if config_path.exists() and not force:
-        console.print("pixharbor.yaml already exists. Use --force to overwrite.")
+        print_panel("Nothing changed", "pixharbor.yaml already exists.\nRun: pixharbor init --force", "yellow")
         raise typer.Exit(1)
 
     config_path.write_text(DEFAULT_CONFIG, encoding="utf-8")
     datasets_path.mkdir(exist_ok=True)
 
-    console.print("Created pixharbor.yaml")
-    console.print("Created datasets/")
+    print_panel("Project ready", "Created pixharbor.yaml\nCreated datasets/")
 
 
 @app.command()
@@ -96,36 +111,45 @@ def doctor(
         typer.Option("--config", "-c", help="Path to PixHarbor YAML config."),
     ] = Path("pixharbor.yaml"),
 ) -> None:
-    """Check PixHarbor setup."""
+    """Check your setup."""
     failed = False
     python_ok = sys.version_info >= (3, 11)
 
-    console.print("PixHarbor doctor")
-    console.print(f"{'OK' if python_ok else 'FAIL'} Python {sys.version.split()[0]}")
+    table = Table(title="PixHarbor Doctor", box=box.ROUNDED, border_style="blue", header_style="bold blue")
+    table.add_column("Check", style="cyan")
+    table.add_column("Status")
+    table.add_column("Details", style="green")
+
+    table.add_row("Python", "OK" if python_ok else "FAIL", sys.version.split()[0])
     failed = failed or not python_ok
 
     for name, module in REQUIRED_MODULES.items():
         ok = importlib.util.find_spec(module) is not None
-        console.print(f"{'OK' if ok else 'FAIL'} {name}")
+        table.add_row(name, "OK" if ok else "FAIL", module)
         failed = failed or not ok
 
     try:
         loaded = load_config(config)
-        console.print(f"OK config: {config}")
-        console.print(f"OK dataset: {loaded.dataset_name}")
+        table.add_row("Config", "OK", str(config))
+        table.add_row("Dataset", "OK", loaded.dataset_name)
     except ConfigError as exc:
-        console.print(f"FAIL config: {exc}")
+        table.add_row("Config", "FAIL", str(exc))
         failed = True
 
+    console.print(table)
     if failed:
         raise typer.Exit(1)
 
 
 @app.command()
 def sources() -> None:
-    """Show available image sources."""
+    """List image sources."""
+    table = Table(title="Image Sources", box=box.ROUNDED, border_style="blue", header_style="bold blue")
+    table.add_column("Source", style="cyan")
+    table.add_column("Status", style="green")
     for source in list_sources():
-        console.print(source)
+        table.add_row(source, "ready")
+    console.print(table)
 
 
 @app.command()
@@ -134,20 +158,25 @@ def search(
     source: Annotated[str, typer.Option("--source", "-s", help="Image source.")] = "openverse",
     limit: Annotated[int, typer.Option("--limit", "-l", min=1, max=50)] = 5,
 ) -> None:
-    """Search image metadata without downloading files."""
+    """Search image metadata."""
     try:
         results = search_images(source, query, limit)
     except SourceError as exc:
-        console.print(str(exc))
+        console.print(f"Search failed: {exc}")
         raise typer.Exit(1) from exc
 
     if not results:
-        console.print("No results.")
+        print_panel("No results", f"No images found for: {query}", "yellow")
         return
 
+    table = Table(title=f"Results for {query}", box=box.ROUNDED, border_style="blue", header_style="bold blue")
+    table.add_column("#", justify="right", style="cyan")
+    table.add_column("Source", style="green")
+    table.add_column("Title")
+    table.add_column("Image URL", overflow="fold")
     for index, item in enumerate(results, 1):
-        console.print(f"{index}. {item.source}: {item.title}")
-        console.print(f"   {item.image_url}")
+        table.add_row(str(index), item.source, item.title, item.image_url)
+    console.print(table)
 
 
 @app.command()
@@ -158,11 +187,11 @@ def collect(
     ],
     download: Annotated[bool, typer.Option("--download", help="Download found images.")] = False,
 ) -> None:
-    """Collect image metadata from configured sources."""
+    """Collect image records."""
     try:
         loaded = load_config(config)
     except ConfigError as exc:
-        console.print(str(exc))
+        console.print(f"Config error: {exc}")
         raise typer.Exit(1) from exc
 
     results = []
@@ -190,13 +219,17 @@ def collect(
                     break
 
     downloads = download_images(loaded, results) if download else None
-    if downloads:
-        downloaded = sum(1 for item in downloads.values() if item.status == "downloaded")
-        console.print(f"Downloaded {downloaded}/{len(results)} images")
-
+    downloaded = sum(1 for item in downloads.values() if item.status == "downloaded") if downloads else 0
     metadata_path = write_metadata_jsonl(loaded, results, downloads)
-    console.print(f"Collected {len(results)} image records")
-    console.print(f"Wrote {metadata_path}")
+    print_summary(
+        "Collect Summary",
+        [
+            ("Dataset", loaded.dataset_name),
+            ("Records", str(len(results))),
+            ("Images", f"{downloaded}/{len(results)} downloaded" if download else "metadata only"),
+            ("Metadata", str(metadata_path)),
+        ],
+    )
 
 
 @app.command()
@@ -205,22 +238,28 @@ def clean(
     min_width: Annotated[int, typer.Option("--min-width", min=1)] = 1,
     min_height: Annotated[int, typer.Option("--min-height", min=1)] = 1,
 ) -> None:
-    """Clean downloaded images into clean/ and rejected/ folders."""
+    """Clean downloaded images."""
     summary = clean_dataset(dataset_path, min_width=min_width, min_height=min_height)
-    console.print(f"Checked {summary.checked} images")
-    console.print(f"Clean {summary.clean}")
-    console.print(f"Rejected {summary.rejected}")
-    console.print(f"Duplicate {summary.duplicate}")
+    print_summary(
+        "Clean Summary",
+        [
+            ("Checked", str(summary.checked)),
+            ("Clean", str(summary.clean)),
+            ("Rejected", str(summary.rejected)),
+            ("Duplicate", str(summary.duplicate)),
+        ],
+    )
 
 
 @app.command()
 def expand(keyword: str, limit: int = 10) -> None:
-    """Generate simple keyword suggestions."""
+    """Suggest search keywords."""
     try:
         queries = expand_keywords(keyword, limit)
     except ValueError as exc:
-        console.print(str(exc))
+        console.print(f"Keyword error: {exc}")
         raise typer.Exit(1) from exc
 
+    console.print("[bold blue]Keyword ideas[/]")
     for index, query in enumerate(queries, 1):
         console.print(f"{index}. {query}")

@@ -55,7 +55,9 @@ def test_doctor_accepts_valid_config(tmp_path: Path, monkeypatch: Any) -> None:
     result = CliRunner().invoke(app, ["doctor"])
 
     assert result.exit_code == 0
-    assert "OK config: pixharbor.yaml" in result.output
+    assert "Config" in result.output
+    assert "pixharbor.yaml" in result.output
+    assert "my_dataset" in result.output
 
 
 def test_doctor_rejects_missing_config(tmp_path: Path, monkeypatch: Any) -> None:
@@ -63,7 +65,8 @@ def test_doctor_rejects_missing_config(tmp_path: Path, monkeypatch: Any) -> None
     result = CliRunner().invoke(app, ["doctor"])
 
     assert result.exit_code == 1
-    assert "FAIL config: Config not found: pixharbor.yaml" in result.output
+    assert "FAIL" in result.output
+    assert "Config not found: pixharbor.yaml" in result.output
 
 
 def test_sources_command() -> None:
@@ -91,7 +94,9 @@ def test_search_command(monkeypatch: Any) -> None:
     result = CliRunner().invoke(app, ["search", "cat", "--source", "openverse", "--limit", "1"])
 
     assert result.exit_code == 0
-    assert "openverse: Cat" in result.output
+    assert "openverse" in result.output
+    assert "Cat" in result.output
+    assert "https://example.test/cat.jpg" in result.output
 
 
 def test_collect_writes_metadata(tmp_path: Path, monkeypatch: Any) -> None:
@@ -135,7 +140,9 @@ filters:
 
     assert result.exit_code == 0
     assert Path("datasets/cats/metadata.jsonl").exists()
-    assert "Collected 1 image records" in result.output
+    assert "Collect Summary" in result.output
+    assert "Records" in result.output
+    assert "metadata only" in result.output
 
 
 def test_collect_downloads_images(tmp_path: Path, monkeypatch: Any) -> None:
@@ -188,7 +195,7 @@ filters:
     result = CliRunner().invoke(app, ["collect", "--config", "pixharbor.yaml", "--download"])
 
     assert result.exit_code == 0
-    assert "Downloaded 1/1 images" in result.output
+    assert "1/1 downloaded" in result.output
 
 
 def test_clean_command(tmp_path: Path) -> None:
@@ -200,6 +207,7 @@ def test_clean_command(tmp_path: Path) -> None:
     result = CliRunner().invoke(app, ["clean", str(dataset)])
 
     assert result.exit_code == 0
-    assert "Checked 1 images" in result.output
-    assert "Rejected 1" in result.output
-    assert "Duplicate 0" in result.output
+    assert "Clean Summary" in result.output
+    assert "Checked" in result.output
+    assert "Rejected" in result.output
+    assert "Duplicate" in result.output

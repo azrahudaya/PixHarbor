@@ -10,11 +10,11 @@
 ![License](https://img.shields.io/badge/License-MIT-2563EB?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Early_Development-38BDF8?style=for-the-badge)
 
-Open-source CLI tool for collecting, cleaning, and organizing image datasets for AI and computer vision projects.
+Collect, download, clean, and organize image datasets from your terminal.
 
 ## Status
 
-PixHarbor is in early development. The first target is `v0.1.0 - Core Collector`.
+Early development. Current focus: `v0.1.0 - Core Collector`.
 
 ## Install for Development
 
@@ -24,18 +24,23 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
-## Usage
+## Quick Start
 
 ```bash
 pixharbor --help
 pixharbor init
 pixharbor doctor
-pixharbor sources
 pixharbor expand "cooling tower"
-pixharbor search "cooling tower" --source openverse --limit 5
-pixharbor collect --config examples/cooling_tower.yaml
 pixharbor collect --config examples/cooling_tower.yaml --download
 pixharbor clean ./datasets/cooling-tower --min-width 640 --min-height 480
+```
+
+## Commands
+
+```bash
+pixharbor sources
+pixharbor search "cooling tower" --source openverse --limit 5
+pixharbor collect --config examples/cooling_tower.yaml
 ```
 
 ## MVP Scope
