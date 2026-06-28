@@ -35,6 +35,7 @@ pixharbor expand "cooling tower"
 pixharbor search "cooling tower" --source openverse --limit 5
 pixharbor collect --config examples/cooling_tower.yaml
 pixharbor collect --config examples/cooling_tower.yaml --download
+pixharbor clean ./datasets/cooling-tower --min-width 640 --min-height 480
 ```
 
 ## MVP Scope
