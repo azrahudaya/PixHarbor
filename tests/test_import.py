@@ -202,3 +202,4 @@ def test_clean_command(tmp_path: Path) -> None:
     assert result.exit_code == 0
     assert "Checked 1 images" in result.output
     assert "Rejected 1" in result.output
+    assert "Duplicate 0" in result.output

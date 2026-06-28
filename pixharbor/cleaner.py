@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
 import shutil
 
@@ -10,6 +11,7 @@ class CleanSummary:
     checked: int = 0
     clean: int = 0
     rejected: int = 0
+    duplicate: int = 0
 
 
 def clean_dataset(
@@ -23,7 +25,9 @@ def clean_dataset(
     rejected_dir = dataset_path / "rejected"
 
     checked = clean = rejected = 0
+    duplicate = 0
     allowed = {item.lower().lstrip(".") for item in allowed_formats}
+    seen_hashes: set[str] = set()
 
     for path in sorted(raw_dir.rglob("*")):
         if not path.is_file():
@@ -36,11 +40,19 @@ def clean_dataset(
         if reason:
             move_file(path, rejected_dir / reason, source_name)
             rejected += 1
+            continue
+
+        sha256_hash = file_sha256(path)
+        if sha256_hash in seen_hashes:
+            move_file(path, rejected_dir / "duplicate", source_name)
+            duplicate += 1
+            rejected += 1
         else:
+            seen_hashes.add(sha256_hash)
             copy_file(path, clean_dir, source_name)
             clean += 1
 
-    return CleanSummary(checked=checked, clean=clean, rejected=rejected)
+    return CleanSummary(checked=checked, clean=clean, rejected=rejected, duplicate=duplicate)
 
 
 def rejection_reason(
@@ -93,3 +105,8 @@ def unique_path(path: Path) -> Path:
             return candidate
 
     raise RuntimeError(f"Could not find unique path for {path}")
+
+
+def file_sha256(path: Path) -> str:
+    with path.open("rb") as file:
+        return hashlib.file_digest(file, "sha256").hexdigest()

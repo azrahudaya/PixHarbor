@@ -210,6 +210,7 @@ def clean(
     console.print(f"Checked {summary.checked} images")
     console.print(f"Clean {summary.clean}")
     console.print(f"Rejected {summary.rejected}")
+    console.print(f"Duplicate {summary.duplicate}")
 
 
 @app.command()
