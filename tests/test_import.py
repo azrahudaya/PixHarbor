@@ -189,3 +189,16 @@ filters:
 
     assert result.exit_code == 0
     assert "Downloaded 1/1 images" in result.output
+
+
+def test_clean_command(tmp_path: Path) -> None:
+    dataset = tmp_path / "cats"
+    raw = dataset / "raw" / "openverse"
+    raw.mkdir(parents=True)
+    raw.joinpath("000001.jpg").write_text("not an image", encoding="utf-8")
+
+    result = CliRunner().invoke(app, ["clean", str(dataset)])
+
+    assert result.exit_code == 0
+    assert "Checked 1 images" in result.output
+    assert "Rejected 1" in result.output

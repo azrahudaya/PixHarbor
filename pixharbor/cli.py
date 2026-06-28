@@ -7,6 +7,7 @@ import typer
 from rich.console import Console
 
 from pixharbor import __version__
+from pixharbor.cleaner import clean_dataset
 from pixharbor.config import ConfigError, load_config
 from pixharbor.downloader import download_images
 from pixharbor.keyword_expander import expand_keywords
@@ -196,6 +197,19 @@ def collect(
     metadata_path = write_metadata_jsonl(loaded, results, downloads)
     console.print(f"Collected {len(results)} image records")
     console.print(f"Wrote {metadata_path}")
+
+
+@app.command()
+def clean(
+    dataset_path: Path,
+    min_width: Annotated[int, typer.Option("--min-width", min=1)] = 1,
+    min_height: Annotated[int, typer.Option("--min-height", min=1)] = 1,
+) -> None:
+    """Clean downloaded images into clean/ and rejected/ folders."""
+    summary = clean_dataset(dataset_path, min_width=min_width, min_height=min_height)
+    console.print(f"Checked {summary.checked} images")
+    console.print(f"Clean {summary.clean}")
+    console.print(f"Rejected {summary.rejected}")
 
 
 @app.command()
