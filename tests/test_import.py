@@ -5,6 +5,7 @@ from typer.testing import CliRunner
 
 from pixharbor import __version__
 from pixharbor.cli import app
+from pixharbor.downloader import DownloadResult
 from pixharbor.sources import ImageSearchResult
 
 
@@ -135,3 +136,56 @@ filters:
     assert result.exit_code == 0
     assert Path("datasets/cats/metadata.jsonl").exists()
     assert "Collected 1 image records" in result.output
+
+
+def test_collect_downloads_images(tmp_path: Path, monkeypatch: Any) -> None:
+    monkeypatch.chdir(tmp_path)
+    Path("pixharbor.yaml").write_text(
+        """
+dataset_name: cats
+main_keyword: cat
+queries:
+  - cat
+negative_keywords: []
+sources:
+  - openverse
+output_dir: ./datasets/cats
+limit: 1
+filters:
+  min_width: 1
+  min_height: 1
+  allowed_formats:
+    - jpg
+  remove_duplicates: true
+  blur_detection: false
+""".strip(),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "pixharbor.cli.search_images",
+        lambda source, query, limit: [
+            ImageSearchResult(
+                id="1",
+                source=source,
+                query=query,
+                title="Cat",
+                page_url="https://example.test/cat",
+                image_url="https://example.test/cat.jpg",
+            )
+        ],
+    )
+    monkeypatch.setattr(
+        "pixharbor.cli.download_images",
+        lambda config, results: {
+            "https://example.test/cat.jpg": DownloadResult(
+                "https://example.test/cat.jpg",
+                Path("datasets/cats/raw/openverse/000001.jpg"),
+                "downloaded",
+            )
+        },
+    )
+
+    result = CliRunner().invoke(app, ["collect", "--config", "pixharbor.yaml", "--download"])
+
+    assert result.exit_code == 0
+    assert "Downloaded 1/1 images" in result.output

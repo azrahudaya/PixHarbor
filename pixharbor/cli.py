@@ -8,6 +8,7 @@ from rich.console import Console
 
 from pixharbor import __version__
 from pixharbor.config import ConfigError, load_config
+from pixharbor.downloader import download_images
 from pixharbor.keyword_expander import expand_keywords
 from pixharbor.metadata import write_metadata_jsonl
 from pixharbor.sources import SourceError, list_sources, search_images
@@ -154,6 +155,7 @@ def collect(
         Path,
         typer.Option("--config", "-c", help="Path to PixHarbor YAML config."),
     ],
+    download: Annotated[bool, typer.Option("--download", help="Download found images.")] = False,
 ) -> None:
     """Collect image metadata from configured sources."""
     try:
@@ -186,7 +188,12 @@ def collect(
                 if len(results) >= loaded.limit:
                     break
 
-    metadata_path = write_metadata_jsonl(loaded, results)
+    downloads = download_images(loaded, results) if download else None
+    if downloads:
+        downloaded = sum(1 for item in downloads.values() if item.status == "downloaded")
+        console.print(f"Downloaded {downloaded}/{len(results)} images")
+
+    metadata_path = write_metadata_jsonl(loaded, results, downloads)
     console.print(f"Collected {len(results)} image records")
     console.print(f"Wrote {metadata_path}")
 

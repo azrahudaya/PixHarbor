@@ -34,6 +34,7 @@ pixharbor sources
 pixharbor expand "cooling tower"
 pixharbor search "cooling tower" --source openverse --limit 5
 pixharbor collect --config examples/cooling_tower.yaml
+pixharbor collect --config examples/cooling_tower.yaml --download
 ```
 
 ## MVP Scope
