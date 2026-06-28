@@ -5,6 +5,7 @@ from typer.testing import CliRunner
 
 from pixharbor import __version__
 from pixharbor.cli import app
+from pixharbor.sources import ImageSearchResult
 
 
 def test_version() -> None:
@@ -62,3 +63,31 @@ def test_doctor_rejects_missing_config(tmp_path: Path, monkeypatch: Any) -> None
 
     assert result.exit_code == 1
     assert "FAIL config: Config not found: pixharbor.yaml" in result.output
+
+
+def test_sources_command() -> None:
+    result = CliRunner().invoke(app, ["sources"])
+
+    assert result.exit_code == 0
+    assert "openverse" in result.output
+    assert "wikimedia" in result.output
+
+
+def test_search_command(monkeypatch: Any) -> None:
+    monkeypatch.setattr(
+        "pixharbor.cli.search_images",
+        lambda source, query, limit: [
+            ImageSearchResult(
+                id="1",
+                source=source,
+                query=query,
+                title="Cat",
+                page_url="https://example.test/cat",
+                image_url="https://example.test/cat.jpg",
+            )
+        ],
+    )
+    result = CliRunner().invoke(app, ["search", "cat", "--source", "openverse", "--limit", "1"])
+
+    assert result.exit_code == 0
+    assert "openverse: Cat" in result.output

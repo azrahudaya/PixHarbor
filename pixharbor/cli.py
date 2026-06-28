@@ -9,6 +9,7 @@ from rich.console import Console
 from pixharbor import __version__
 from pixharbor.config import ConfigError, load_config
 from pixharbor.keyword_expander import expand_keywords
+from pixharbor.sources import SourceError, list_sources, search_images
 
 DEFAULT_CONFIG = """dataset_name: my_dataset
 main_keyword: example keyword
@@ -115,6 +116,35 @@ def doctor(
 
     if failed:
         raise typer.Exit(1)
+
+
+@app.command()
+def sources() -> None:
+    """Show available image sources."""
+    for source in list_sources():
+        console.print(source)
+
+
+@app.command()
+def search(
+    query: str,
+    source: Annotated[str, typer.Option("--source", "-s", help="Image source.")] = "openverse",
+    limit: Annotated[int, typer.Option("--limit", "-l", min=1, max=50)] = 5,
+) -> None:
+    """Search image metadata without downloading files."""
+    try:
+        results = search_images(source, query, limit)
+    except SourceError as exc:
+        console.print(str(exc))
+        raise typer.Exit(1) from exc
+
+    if not results:
+        console.print("No results.")
+        return
+
+    for index, item in enumerate(results, 1):
+        console.print(f"{index}. {item.source}: {item.title}")
+        console.print(f"   {item.image_url}")
 
 
 @app.command()
