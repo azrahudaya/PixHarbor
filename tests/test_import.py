@@ -45,3 +45,20 @@ def test_init_force_overwrites_config(tmp_path: Path, monkeypatch: Any) -> None:
 
     assert result.exit_code == 0
     assert "dataset_name: my_dataset" in Path("pixharbor.yaml").read_text(encoding="utf-8")
+
+
+def test_doctor_accepts_valid_config(tmp_path: Path, monkeypatch: Any) -> None:
+    monkeypatch.chdir(tmp_path)
+    CliRunner().invoke(app, ["init"])
+    result = CliRunner().invoke(app, ["doctor"])
+
+    assert result.exit_code == 0
+    assert "OK config: pixharbor.yaml" in result.output
+
+
+def test_doctor_rejects_missing_config(tmp_path: Path, monkeypatch: Any) -> None:
+    monkeypatch.chdir(tmp_path)
+    result = CliRunner().invoke(app, ["doctor"])
+
+    assert result.exit_code == 1
+    assert "FAIL config: Config not found: pixharbor.yaml" in result.output

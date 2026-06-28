@@ -28,6 +28,8 @@ pip install -e ".[dev]"
 
 ```bash
 pixharbor --help
+pixharbor init
+pixharbor doctor
 pixharbor expand "cooling tower"
 ```
 
