@@ -8,6 +8,7 @@ from rich.console import Console
 
 from pixharbor import __version__
 from pixharbor.config import ConfigError, load_config
+from pixharbor.keyword_expander import expand_keywords
 
 DEFAULT_CONFIG = """dataset_name: my_dataset
 main_keyword: example keyword
@@ -119,19 +120,11 @@ def doctor(
 @app.command()
 def expand(keyword: str, limit: int = 10) -> None:
     """Generate simple keyword suggestions."""
-    templates = [
-        "{keyword}",
-        "industrial {keyword}",
-        "power plant {keyword}",
-        "{keyword} Indonesia",
-        "{keyword} factory",
-        "{keyword} pabrik",
-        "{keyword} industri",
-        "{keyword} geothermal",
-        "{keyword} PLTP",
-        "{keyword} PLTU",
-    ]
-    for index, query in enumerate(dict.fromkeys(t.format(keyword=keyword) for t in templates), 1):
-        if index > limit:
-            break
+    try:
+        queries = expand_keywords(keyword, limit)
+    except ValueError as exc:
+        console.print(str(exc))
+        raise typer.Exit(1) from exc
+
+    for index, query in enumerate(queries, 1):
         console.print(f"{index}. {query}")
