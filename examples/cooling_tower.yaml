@@ -1,0 +1,26 @@
+dataset_name: cooling_tower
+main_keyword: cooling tower
+queries:
+  - cooling tower
+  - industrial cooling tower
+  - power plant cooling tower
+  - cooling tower Indonesia
+negative_keywords:
+  - cartoon
+  - icon
+  - illustration
+sources:
+  - openverse
+  - wikimedia
+output_dir: ./datasets/cooling-tower
+limit: 100
+filters:
+  min_width: 640
+  min_height: 480
+  allowed_formats:
+    - jpg
+    - jpeg
+    - png
+    - webp
+  remove_duplicates: true
+  blur_detection: false
