@@ -30,7 +30,9 @@ pip install -e ".[dev]"
 pixharbor --help
 pixharbor init
 pixharbor doctor
+pixharbor sources
 pixharbor expand "cooling tower"
+pixharbor search "cooling tower" --source openverse --limit 5
 ```
 
 ## MVP Scope
