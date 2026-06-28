@@ -9,6 +9,7 @@ from rich.console import Console
 from pixharbor import __version__
 from pixharbor.config import ConfigError, load_config
 from pixharbor.keyword_expander import expand_keywords
+from pixharbor.metadata import write_metadata_jsonl
 from pixharbor.sources import SourceError, list_sources, search_images
 
 DEFAULT_CONFIG = """dataset_name: my_dataset
@@ -145,6 +146,49 @@ def search(
     for index, item in enumerate(results, 1):
         console.print(f"{index}. {item.source}: {item.title}")
         console.print(f"   {item.image_url}")
+
+
+@app.command()
+def collect(
+    config: Annotated[
+        Path,
+        typer.Option("--config", "-c", help="Path to PixHarbor YAML config."),
+    ],
+) -> None:
+    """Collect image metadata from configured sources."""
+    try:
+        loaded = load_config(config)
+    except ConfigError as exc:
+        console.print(str(exc))
+        raise typer.Exit(1) from exc
+
+    results = []
+    seen_urls = set()
+
+    for query in loaded.queries:
+        if len(results) >= loaded.limit:
+            break
+        for source in loaded.sources:
+            if len(results) >= loaded.limit:
+                break
+            remaining = loaded.limit - len(results)
+            try:
+                found = search_images(source, query, remaining)
+            except SourceError as exc:
+                console.print(f"{source}: {exc}")
+                continue
+
+            for item in found:
+                if item.image_url in seen_urls:
+                    continue
+                seen_urls.add(item.image_url)
+                results.append(item)
+                if len(results) >= loaded.limit:
+                    break
+
+    metadata_path = write_metadata_jsonl(loaded, results)
+    console.print(f"Collected {len(results)} image records")
+    console.print(f"Wrote {metadata_path}")
 
 
 @app.command()
