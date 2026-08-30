@@ -1,6 +1,5 @@
 from collections.abc import Iterable
 
-
 DEFAULT_TEMPLATES = (
     "{keyword}",
     "industrial {keyword}",

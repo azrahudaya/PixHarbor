@@ -1,7 +1,7 @@
-from dataclasses import dataclass
 import hashlib
-from pathlib import Path
 import shutil
+from dataclasses import dataclass
+from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
 

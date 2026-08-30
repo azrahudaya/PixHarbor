@@ -1,30 +1,41 @@
-<p align="center">
-  <img src="assets/pixharbor-banner.png" alt="PixHarbor" width="100%">
-</p>
+# pixharbor
 
-# PixHarbor
+![python](https://img.shields.io/badge/python-3.11%2B-2563eb?style=flat-square&logo=python&logoColor=white)
+![cli](https://img.shields.io/badge/interface-cli-0ea5e9?style=flat-square&logo=gnubash&logoColor=white)
+![computer vision](https://img.shields.io/badge/focus-computer%20vision-1d4ed8?style=flat-square)
+![tests](https://img.shields.io/badge/tests-30%20passed-16a34a?style=flat-square)
+![license](https://img.shields.io/badge/license-mit-2563eb?style=flat-square)
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-2563EB?style=for-the-badge&logo=python&logoColor=white)
-![CLI Tool](https://img.shields.io/badge/CLI-Tool-0EA5E9?style=for-the-badge&logo=terminal&logoColor=white)
-![AI Datasets](https://img.shields.io/badge/AI-Datasets-1D4ED8?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-2563EB?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Early_Development-38BDF8?style=for-the-badge)
+cli untuk mengumpulkan, membersihkan, dan mengatur image dataset untuk ai dan computer vision.
 
-Open-source CLI tool for collecting, cleaning, and organizing image datasets for AI and computer vision projects.
+## status
 
-## Status
+`v0.1.0` | early development
 
-PixHarbor is in early development. The first target is `v0.1.0 - Core Collector`.
+fitur inti sudah tersedia. api source, downloader, metadata export, dan dataset cleaner masih dapat berubah.
 
-## Install for Development
+## fitur
+
+- source adapter untuk openverse dan wikimedia
+- keyword expansion berbasis template
+- yaml config
+- image downloader
+- metadata jsonl
+- ukuran minimum dan duplicate check
+- struktur folder dataset yang konsisten
+- command `doctor` untuk cek konfigurasi
+
+## install
 
 ```bash
+git clone https://github.com/azrahudaya/PixHarbor.git
+cd PixHarbor
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
-## Usage
+## penggunaan
 
 ```bash
 pixharbor --help
@@ -38,16 +49,36 @@ pixharbor collect --config examples/cooling_tower.yaml --download
 pixharbor clean ./datasets/cooling-tower --min-width 640 --min-height 480
 ```
 
-## MVP Scope
+## development
 
-- CLI commands
-- Rule-based keyword expansion
-- YAML config loading
-- Openverse and Wikimedia sources
-- Image download workflow
-- Metadata export
-- Clean dataset folder structure
+```bash
+pytest -q
+ruff check pixharbor tests
+```
 
-## License
+## struktur
 
-MIT
+```text
+pixharbor/   source code
+examples/    contoh konfigurasi
+tests/       test suite
+```
+
+## batasan
+
+- source adapter masih terbatas
+- belum ada distributed download
+- belum ada dashboard
+- api source dapat berubah sesuai kebijakan masing-masing provider
+
+## roadmap
+
+lihat [roadmap.md](ROADMAP.md).
+
+## kontribusi
+
+issue dan pull request dipersilakan. jelaskan perubahan, cara menguji, dan dampaknya.
+
+## license
+
+mit. lihat [license](LICENSE).

@@ -1,7 +1,13 @@
 import httpx
 import pytest
 
-from pixharbor.sources import SourceError, list_sources, search_images, search_openverse, search_wikimedia
+from pixharbor.sources import (
+    SourceError,
+    list_sources,
+    search_images,
+    search_openverse,
+    search_wikimedia,
+)
 
 
 def mock_client(payload: dict) -> httpx.Client:
